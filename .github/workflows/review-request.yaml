@@ -36,6 +36,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@bd01e18f51369d5a26f1651c3cb451d3417e3bba  # v6.3.1
 
+      # TODO: If we update the description then the reporter can edit it, which means they could
+      # cheat and tick boxes. Perhaps this should be a comment instead? I think the reporter can't
+      # then edit comments, unless they are have rights on this repository, which should mean that
+      # they are trustworthy.
       - name: Update issue summary and description
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
