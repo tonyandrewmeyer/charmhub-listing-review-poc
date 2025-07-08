@@ -37,8 +37,8 @@ body:
       description: "Does this charm provide any charm libraries?"
       multiple: false
       options:
-        - Yes
-        - No
+        - "Yes"
+        - "No"
     validations:
       required: true
 
