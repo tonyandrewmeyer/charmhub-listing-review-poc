@@ -419,6 +419,10 @@ def charmcraft_tooling(repo_dir: pathlib.Path) -> str:
             if f'[testenv:{command}]' in content:
                 found_commands.add(command)
 
+    # TODO: We also want to run all of these commands and verify that they exit
+    # successfully (probably just the exit code is enough, rather than trying to
+    # figure out if they did want we think they should do).)
+
     if all(command in found_commands for command in commands):
         return description.replace('* [ ]', '* [x]')
     return description
