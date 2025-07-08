@@ -53,6 +53,7 @@ def issue_description(
     """Provide a suitable issue description."""
     # TODO: Fix the text wrapping - it needs to be soft, not hard.
     # TODO: The links to CONTRIBUTING.md and README.md don't work.
+    # TODO: Update the documentation expectations based on the discussion with David.
     description = [
         f"""
 Please review the charm by checking each of the items in the following checklist.
