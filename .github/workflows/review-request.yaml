@@ -40,6 +40,9 @@ jobs:
       # cheat and tick boxes. Perhaps this should be a comment instead? I think the reporter can't
       # then edit comments, unless they are have rights on this repository, which should mean that
       # they are trustworthy.
+      # TODO: we also want some way that people can trigger this workflow to get the updated
+      # results, so they can open in draft and then see how they are going, at least for the
+      # automatic checks.
       - name: Update issue summary and description
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
