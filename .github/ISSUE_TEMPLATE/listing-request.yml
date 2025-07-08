@@ -13,15 +13,6 @@ body:
       required: true
 
   - type: textarea
-    id: Description
-    attributes:
-      label: Description
-      description: "Provide a short description of the charm:"
-      placeholder: for example, as found in charmcraft.yaml's description field
-    validations:
-      required: true
-
-  - type: textarea
     id: Demo
     attributes:
       label: Demo
