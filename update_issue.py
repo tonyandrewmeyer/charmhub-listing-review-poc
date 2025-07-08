@@ -23,6 +23,7 @@ created issue to be user-friendly, and to include the current checklist.
 
 import pathlib
 import re
+import subprocess  # noqa: S404
 
 BEST_PRACTICE_RE_MD = re.compile(
     r'```{admonition} Best practice\s*(?:.*?\n)?([\s\S]*?)```',
@@ -36,7 +37,7 @@ BEST_PRACTICE_RE_REST = re.compile(
 
 def issue(name: str):
     """Provide a suitable issue title."""
-    return f'Review {name} for public listing on Charmhub'
+    return f'Review `{name}` for public listing on Charmhub'
 
 
 def issue_description(
@@ -44,6 +45,7 @@ def issue_description(
     demo_url: str,
     ci_release_url: str,
     ci_integration_url: str,
+    documentation_link: str,
     has_library: bool,
     path_to_ops: pathlib.Path,
     path_to_charmcraft: pathlib.Path,
@@ -80,8 +82,8 @@ posts within *one working day*.
 
 * [ ] The charm does what it is meant to do, per the [demo or tutorial]({demo_url}).
 * [ ] The [charm's page on Charmhub](https://charmhub.io/{name}) provides a
-  quality impression. The overall appearance looks good and the documentation
-  looks reasonable.
+  quality impression. The overall appearance looks good and the
+  [documentation]({documentation_link}) looks reasonable.
 * [ ] [Automated releasing]({ci_release_url}) to unstable channels exists
 * [ ] [Integration tests]({ci_integration_url}) exist, are run on every change
   to the default branch, and are passing. At minimum, the tests verify that the
@@ -154,25 +156,64 @@ def find_best_practices(path_to_ops: pathlib.Path, path_to_charmcraft: pathlib.P
     return checklist
 
 
+def get_details_from_issue(issue_number: int):
+    """Fetch details from the issue number using the GitHub CLI.
+
+    Requires `gh` CLI to be installed and authenticated, and `jq` to be
+    available.
+    """
+    result = subprocess.run(  # noqa: S603
+        ['gh', 'issue', 'view', str(issue_number), '--json', 'body', '--jq', '.body'],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    body = result.stdout
+
+    # Define the fields to extract and their headings
+    fields = {
+        'name': '### Charm name',
+        'demo_url': '### Demo',
+        'has_library': '### Charm Libraries',
+        'project_repo': '### Project Repository',
+        'ci_linting': '### CI Linting',
+        'ci_release_url': '### CI Release',
+        'ci_integration_url': '### CI Integration Tests',
+        'documentation_link': '### Documentation Link',
+        'contribution_link': '### Contribution Link',
+        'license_link': '### License Link',
+        'security_link': '### Security Link',
+    }
+
+    # Extract values for each field
+    issue_data = {}
+    for key, heading in fields.items():
+        pattern = rf'{re.escape(heading)}\s*\n([^\n]*)'
+        match = re.search(pattern, body)
+        if match:
+            value = match.group(1).strip()
+            if key == 'has_library':
+                issue_data[key] = value.lower() in ('yes', 'true', '1')
+            else:
+                issue_data[key] = value
+        else:
+            issue_data[key] = None
+
+    return issue_data
+
+
 if __name__ == '__main__':
-    # For testing purposes.
     import argparse
+
+    from . import evaluate
 
     parser = argparse.ArgumentParser(
         description='Update a GitHub issue for a charm listing review.'
     )
-    parser.add_argument('name', help='The name of the charm')
-    parser.add_argument('demo_url', help='The URL to the demo or tutorial for the charm')
-    parser.add_argument('ci_release_url', help='The URL to the CI release process for the charm')
+    parser.add_argument('--issue-number', type=int, help='The issue number to update')
     parser.add_argument(
-        'ci_integration_url', help='The URL to the CI integration tests for the charm'
+        '--dry-run', action='store_true', help='Do not update the issue, just print the output'
     )
-    parser.add_argument(
-        '--has-library',
-        action='store_true',
-        help='Indicates if the charm has an interface library',
-    )
-
     parser.add_argument(
         '--path-to-ops',
         type=pathlib.Path,
@@ -185,19 +226,31 @@ if __name__ == '__main__':
         default=pathlib.Path(__file__).parent.parent / 'charmcraft',
         help='Path to a clone of canonical/charmcraft',
     )
-
     args = parser.parse_args()
 
-    print(issue(args.name))
-    print()
-    print(
-        issue_description(
-            args.name,
-            args.demo_url,
-            args.ci_release_url,
-            args.ci_integration_url,
-            args.has_library,
-            args.path_to_ops,
-            args.path_to_charmcraft,
+    issue_data = get_details_from_issue(args.issue_number)
+
+    if args.dry_run:
+        print(issue(args.name))
+        print()
+        print(
+            issue_description(
+                issue_data['name'],
+                issue_data['demo_url'],
+                issue_data['ci_release_url'],
+                issue_data['ci_integration_url'],
+                issue_data['documentation_link'],
+                issue_data['has_library'],
+                args.path_to_ops,
+                args.path_to_charmcraft,
+            )
         )
-    )
+        print(
+            evaluate.evaluate(
+                issue_data['project_repo'],
+                issue_data['ci_linting'],
+                issue_data['contribution_link'],
+                issue_data['license_link'],
+                issue_data['security_link'],
+            )
+        )

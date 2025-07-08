@@ -58,14 +58,6 @@ body:
       required: true
 
   - type: input
-    id: CI-Unit
-    attributes:
-      label: "CI Unit Tests"
-      description: "Please provide the link to the charm's CI workflow for unit tests."
-    validations:
-      required: false
-
-  - type: input
     id: CI-Integration
     attributes:
       label: "CI Integration Tests"
@@ -102,13 +94,5 @@ body:
     attributes:
       label: "Security Link"
       description: "Please provide the link to the charm's security documentation."
-    validations:
-      required: true
-
-  - type: input
-    id: Publisher
-    attributes:
-      label: "Publisher"
-      description: "Please provide a name and email of the charm's publisher."
     validations:
       required: true

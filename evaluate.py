@@ -43,7 +43,11 @@ import yaml
 
 
 def evaluate(
-    repository_url: str, linting_url: str, contribution_url: str, license_url: str
+    repository_url: str,
+    linting_url: str,
+    contribution_url: str,
+    license_url: str,
+    security_url: str,
 ) -> str:
     """Evaluate the charm for listing on Charmhub."""
     results = []
@@ -52,6 +56,7 @@ def evaluate(
         results.append(coding_conventions(linting_url))
         results.append(contribution_guidelines(contribution_url))
         results.append(license_statement(license_url))
+        results.append(security_doc(security_url))
         results.append(metadata_links(repo_dir))
         results.append(action_names(repo_dir))
         results.append(option_names(repo_dir))
@@ -126,6 +131,23 @@ def license_statement(license_url: str) -> str:
         return '[ ] The charm provides a license statement.'
     except requests.RequestException:
         return '[ ] The charm provides a license statement.'
+
+
+def security_doc(security_url: str) -> str:
+    """The charm's security documentation resolves with a 2xx status code.
+
+    The charm's security documentation explains which versions are supported,
+    and how to report security issues.
+    """
+    # Ideally, this would also check some of the content of the security doc,
+    # like that it has a section on how to report security issues.
+    try:
+        response = requests.head(security_url, allow_redirects=True, timeout=5)
+        if response.ok:
+            return '[x] The charm provides a security statement.'
+        return '[ ] The charm provides a security statement.'
+    except requests.RequestException:
+        return '[ ] The charm provides a security statement.'
 
 
 def _clone_repo(charm_repo_url: str) -> pathlib.Path:
