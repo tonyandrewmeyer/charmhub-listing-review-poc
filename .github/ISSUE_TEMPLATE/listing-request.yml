@@ -21,6 +21,8 @@ body:
     validations:
       required: true
 
+  # TODO: This could be a dropdown that has 'yes - interface only', 'yes - interface and general',
+  # 'yes - general only', 'no' and then we could adjust the content more exactly.
   - type: dropdown
     id: Libraries
     attributes:
