@@ -30,12 +30,12 @@ BEST_PRACTICE_RE_MD = re.compile(
     re.MULTILINE,
 )
 BEST_PRACTICE_RE_REST = re.compile(
-    r'^\.\. admonition:: Best practice\s*\n\s*:class: hint\s*\n\s*\n([\s\S]*?)(?=\n\.\. |\Z)',
+    r'^\.\. admonition:: Best practice\s*\n\s*:class: hint\s*\n\s*\n([\s\S]*?)(?=\n\.\. |\n\n|\Z)',
     re.MULTILINE,
 )
 
 
-def issue(name: str):
+def issue_summary(name: str):
     """Provide a suitable issue title."""
     return f'Review `{name}` for public listing on Charmhub'
 
@@ -131,6 +131,20 @@ required for listing.
     return ''.join(description)
 
 
+IGNORED_BEST_PRACTICES = {
+    # This is covered by the more extensive items above. It's also duplicated in
+    # the docs.
+    '* [ ] The quality assurance pipeline of a charm should be automated using a '
+    'continuous integration (CI) system.',
+    # This is duplicated by another best practice note.
+    "* [ ] If you're setting up a ``git`` repository: name it using the pattern "
+    '``<charm name>-operator``. For the charm name, see :ref:`specify-a-name`.',
+    # These don't seem like best practice notes -- we should adjust the docs.
+    '* [ ] Smaller charm documentation examples:',
+    '* [ ] Bigger charm documentation examples:',
+}
+
+
 def extract_best_practice_blocks(file_path: pathlib.Path):
     """Extracts 'Best practice' blocks from a file."""
     content = file_path.read_text()
@@ -152,7 +166,12 @@ def find_best_practices(path_to_ops: pathlib.Path, path_to_charmcraft: pathlib.P
     for directory in (path_to_ops, path_to_charmcraft):
         for file_path in directory.rglob('*'):
             if file_path.suffix in ('.md', '.rst'):
-                checklist.extend(extract_best_practice_blocks(file_path))
+                practices = (
+                    practice
+                    for practice in extract_best_practice_blocks(file_path)
+                    if practice not in IGNORED_BEST_PRACTICES
+                )
+                checklist.extend(practices)
     return checklist
 
 
@@ -205,12 +224,14 @@ def get_details_from_issue(issue_number: int):
 if __name__ == '__main__':
     import argparse
 
-    from . import evaluate
+    import evaluate
 
     parser = argparse.ArgumentParser(
         description='Update a GitHub issue for a charm listing review.'
     )
-    parser.add_argument('--issue-number', type=int, help='The issue number to update')
+    parser.add_argument(
+        '--issue-number', type=int, help='The issue number to update', required=True
+    )
     parser.add_argument(
         '--dry-run', action='store_true', help='Do not update the issue, just print the output'
     )
@@ -231,26 +252,33 @@ if __name__ == '__main__':
     issue_data = get_details_from_issue(args.issue_number)
 
     if args.dry_run:
-        print(issue(args.name))
+        print(issue_summary(issue_data['name']))
         print()
-        print(
-            issue_description(
-                issue_data['name'],
-                issue_data['demo_url'],
-                issue_data['ci_release_url'],
-                issue_data['ci_integration_url'],
-                issue_data['documentation_link'],
-                issue_data['has_library'],
-                args.path_to_ops,
-                args.path_to_charmcraft,
-            )
+        description = issue_description(
+            issue_data['name'],
+            issue_data['demo_url'],
+            issue_data['ci_release_url'],
+            issue_data['ci_integration_url'],
+            issue_data['documentation_link'],
+            issue_data['has_library'],
+            args.path_to_ops,
+            args.path_to_charmcraft,
         )
-        print(
-            evaluate.evaluate(
-                issue_data['project_repo'],
-                issue_data['ci_linting'],
-                issue_data['contribution_link'],
-                issue_data['license_link'],
-                issue_data['security_link'],
-            )
+        results = evaluate.evaluate(
+            issue_data['name'],
+            issue_data['project_repo'],
+            issue_data['ci_linting'],
+            issue_data['contribution_link'],
+            issue_data['license_link'],
+            issue_data['security_link'],
         )
+        for result in results:
+            if result.replace('* [ ]', '* [x]') in description:
+                # TODO: Should we support unticking? The reviewer needs to be able to override
+                # the checklist. However, the publisher should not be able to override and one way
+                # to enforce that is to have the automatic check 'win' (we would also need to
+                # trigger if the description changes and not loop).
+                description = description.replace(result, result.replace('* [ ]', '* [x]'))
+            elif result.replace('* [x]', '* [ ]') in description:
+                description = description.replace(result.replace('* [x]', '* [ ]'), result)
+        print(description)
