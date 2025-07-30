@@ -417,7 +417,7 @@ def charmcraft_tooling(repo_dir: pathlib.Path) -> str:
         return description
 
     # Check for commands in the files
-    commands = {'format', 'list', 'unit', 'integration'}
+    commands = {'format', 'unit', 'integration'}
     found_commands: set[str] = set()
     commands_to_run: list[list[str]] = []
     file_path = repo_dir / filename
