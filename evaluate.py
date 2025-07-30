@@ -32,12 +32,14 @@ for the reviewer, and is also a way for charm publishers to check their charm
 against the listing requirements before submitting a listing request.
 """
 
+import hashlib
 import pathlib
 import re
 import shutil
 import subprocess  # noqa: S404
 import tempfile
 import tomllib
+import xml.etree.ElementTree as ET  # noqa: S405
 
 import requests
 import yaml
@@ -69,6 +71,7 @@ def evaluate(
         results.append(charm_plugin_strict_dependencies(repo_dir))
         results.append(python_requires_version(repo_dir))
         results.append(repo_has_lock_file(repo_dir))
+        results.append(charm_has_icon(repo_dir))
     finally:
         shutil.rmtree(str(repo_dir), ignore_errors=True)
     return results
@@ -124,19 +127,29 @@ def contribution_guidelines(contribution_url: str) -> str:
         return '* [ ] The charm provides contribution guidelines.'
 
 
+_known_licenses = {
+    'fdae7ed259455ca9fa45939e7f25cbb4de29831cda16d9151de25a5f6e9d9be43b053f4fd3b896026239fca77abce04f543d591c501ecf4ce18c854bc0a51660',  # Apache 2.0  # noqa: E501
+    '5ae83c5b0ac7ed6469b38ed11f33b3d1dfabc9eaee8fff6a2e3d5e23b45e5f899a2bec93865c33868e83d0c8e4bff2c0dd0ebf0c3a390903a1f4d9ac7d9ab29e',  # GPL 2  # noqa: E501
+    '56a2f53e2df8adf4b55edf328579a74b1358f7f177b5242bd97dd79a8d26bc93f9dcc96dbdd6854627a96b73deb9ccaada6862f581ad1c8f6a2f3fe0849db005',  # GPL 3  # noqa: E501
+    '0906b47a8ae8ec763c6e548f42582d82fd8c8fa62403cd2b00a94d547277c98e65ce9d505d476b707c10c8aacd2d8094c594ba1e12d3c67cd658981c4bd2fe83',  # LGPL 3  # noqa: E501
+    'f5a0456e775e047c6c91571cf004a42cd04b3962ee882bc7c23d62a9a4d95bb310bfaaeb6a16bd777990eb564cc6c9ef13d7b3028f0d62ed2636ca083de6439a',  # MPL 2.0  # noqa: E501
+}
+
+
 def license_statement(license_url: str) -> str:
     """The charm's license statement resolves with a 2xx status code.
 
     For the charm shared, OSS or not, the licensing terms of the charm are
     clarified (which also implies an identified authorship of the charm).
     """
-    # Ideally, this would validate that the license URL points to something that
-    # is recognisably a license (we could check for the common OSS licenses, and
-    # leave anything else for manual review).
     try:
-        response = requests.head(license_url, allow_redirects=True, timeout=5)
+        response = requests.get(license_url, allow_redirects=True, timeout=5)
         if response.ok:
-            return '* [x] The charm provides a license statement.'
+            # Check for known licenses, with a simple hash.
+            license_hash = hashlib.sha512(response.text.strip().encode('utf-8')).hexdigest()
+            if license_hash in _known_licenses:
+                return '* [x] The charm provides a license statement.'
+            # If it's another license, then let the reviewer decide if it's a license file.
         return '* [ ] The charm provides a license statement.'
     except requests.RequestException:
         return '* [ ] The charm provides a license statement.'
@@ -405,7 +418,8 @@ def charmcraft_tooling(repo_dir: pathlib.Path) -> str:
 
     # Check for commands in the files
     commands = {'format', 'list', 'unit', 'integration'}
-    found_commands = set()
+    found_commands: set[str] = set()
+    commands_to_run: list[list[str]] = []
     file_path = repo_dir / filename
     with file_path.open('r', encoding='utf-8') as f:
         content = f.read().lower()
@@ -414,14 +428,20 @@ def charmcraft_tooling(repo_dir: pathlib.Path) -> str:
         for command in commands:
             if f'{command}:' in content or f'{command} (' in content:
                 found_commands.add(command)
+                if command != 'integration':
+                    commands_to_run.append(['make' if filename == 'Makefile' else 'just', command])
     elif filename == 'tox.ini':
         for command in commands:
             if f'[testenv:{command}]' in content:
                 found_commands.add(command)
+                if command != 'integration':
+                    commands_to_run.append(['tox', '-e', command])
 
-    # TODO: We also want to run all of these commands and verify that they exit
-    # successfully (probably just the exit code is enough, rather than trying to
-    # figure out if they did want we think they should do).)
+    for command in commands_to_run:
+        try:
+            subprocess.check_output(command)  # noqa: S603
+        except subprocess.CalledProcessError:
+            return description
 
     if all(command in found_commands for command in commands):
         return description.replace('* [ ]', '* [x]')
@@ -518,6 +538,48 @@ def repo_has_lock_file(repo_dir: pathlib.Path) -> bool:
     return description
 
 
+def charm_has_icon(repo_dir: pathlib.Path) -> str:
+    """The charm has an icon.
+
+    Requirements:
+     * Canvas size must be 100x100 pixels.
+     * The icon must consist of a circle with a flat color and a logo - any other detail is up to
+       you, but it's a good idea to also conform to best practices.
+
+    Best practices:
+     * Icons should have some padding between the edges of the circle and the logo.
+     * Icons should not be overly complicated. Charm icons are displayed in various sizes
+       (from 160x160 to 32x32 pixels) and they should be always legible.
+     * Symbols should have a similar weight on all icons: Avoid too thin strokes and use the whole
+       space available to draw the symbol within the limits defined by the padding. However, if the
+       symbol is much wider than it is high, it may overflow onto the horizontal padding area to
+       ensure its weight is consistent.
+     * Do not use glossy materials unless they are parts of a logo that you are not allowed to
+       modify.
+    """
+    icon_path = repo_dir / 'icon.svg'
+    if not icon_path.is_file():
+        return '* [ ] The charm has an icon.'
+    tree = ET.parse(icon_path)  # noqa: S314
+    root = tree.getroot()
+    width = root.attrib.get('width')
+    height = root.attrib.get('height')
+    view_box = root.attrib.get('viewBox')
+    if width and height:
+        width_val = float(width.replace('px', ''))
+        height_val = float(height.replace('px', ''))
+        if width_val == 100 and height_val == 100:
+            return '* [x] The charm has an icon.'
+    elif view_box:
+        parts = view_box.strip().split()
+        if len(parts) == 4:
+            vb_width = float(parts[2])
+            vb_height = float(parts[3])
+            if vb_width == 100 and vb_height == 100:
+                return '* [x] The charm has an icon.'
+    return '* [ ] The charm has an icon.'
+
+
 if __name__ == '__main__':
     # For testing purposes.
     import argparse
@@ -527,12 +589,18 @@ if __name__ == '__main__':
     parser.add_argument('linting_url', help='The URL of the linting configuration')
     parser.add_argument('contribution_url', help='The URL of the contribution guidelines')
     parser.add_argument('license_url', help='The URL of the license statement')
+    parser.add_argument('security_url', help='The URL of the security policy')
     args = parser.parse_args()
 
     print(
         '\n'.join(
             evaluate(
-                args.repository_url, args.linting_url, args.contribution_url, args.license_url
+                charm_name=args.repository_url.split('/')[-1].replace('.git', ''),
+                repository_url=args.repository_url,
+                linting_url=args.linting_url,
+                contribution_url=args.contribution_url,
+                license_url=args.license_url,
+                security_url=args.security_url,
             )
         )
     )
