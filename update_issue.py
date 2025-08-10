@@ -59,19 +59,6 @@ def issue_comment(
     The comment outlines what is required by the reviewer and what the current
     progress against the review is.
     """
-    # TODO: Update the documentation expectations based on the discussion with David.
-    # Also in the charm maturity page, there were more specific instructions:
-    # The charm has documentation that covers:
-    # 1. how to use the charm
-    # 2. how to modify the charm
-    # 3. how to contribute to the development.
-    # Usage documentation covers configuration, limitations, and deviations in behaviour from the
-    # “non-charmed” version of the application.
-    # There is a concise `summary` field, with a more detailed description field in the
-    # `charmcraft.yaml`
-    # TODO: documentation: For reference: Charmcraft doc
-    # https://canonical-charmcraft.readthedocs-hosted.com/en/stable/howto/manage-charms/#add-docs,
-    # internal library doc: https://library.canonical.com/documentation/juju-charms-documentation
     # fmt: off
     description = [
         f"""
@@ -99,6 +86,17 @@ Please provide your review within *three working days*. If blocking issues are f
 * [ ] [Integration tests]({ci_integration_url}) exist, are run on every change to the default branch, and are passing. At minimum, the tests verify that the charm can be deployed and ends up in a success state, and that the charm can be integrated with at least one example for each 'provides' and 'requires' specified (including optional, excluding tracing) ending up in a success state. The tests should be run with `charmcraft test`.
 """.strip()  # noqa: E501
     ]
+    description.append(
+        """
+## Documentation
+
+A charm's documentation should focus on the charm itself. For workload-specific or Juju-related content, link to the appropriate upstream documentation. A smaller charm can have single-page documentation for its description. A bigger charm should include a full Diátaxis navigation tree. Check that the charm has documentation that covers:
+* [ ] How to use the charm, including configuration, limitations, and deviations in behaviour from the “non-charmed” version of the application.
+* [ ] How to modify the charm
+* [ ] A concise summary of the charm in the `charmcraft.yaml` 'summary' field, and a more detailed description in the `charmcraft.yaml` 'description' field.
+""".strip(),  # noqa: E501
+    )
+
     # fmt: on
     if has_library:
         description.append('\n\n')
@@ -135,6 +133,22 @@ required for listing.
 {'\n'.join(('* [ ] ' + p) for p in best_practices)}
 """.strip()
         )
+
+    description.append(
+        """
+## Additional checks
+
+The following checks are not required for listing, but are recommended for all charms.
+
+* [ ] A user can deploy the charm with a sensible default configuration.
+* [ ] The charm exposes provides / requires interfaces for integration ready to be adopted by the ecosystem.
+* [ ] The upgrades the application safely, preserving data and settings, and minimising downtime.
+* [ ] The charm supports scaling up and down, if the application permits or supports it.
+* [ ] The charm supports backup and restore, if the application permits or supports it.
+* [ ] The charm is integrated with observability, including metrics, alerting, and logging.
+""".strip()  # noqa: E501
+    )
+
     return ''.join(description)
 
 
