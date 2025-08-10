@@ -21,10 +21,13 @@ creation process, with the help of the issue template. This script updates the
 created issue to be user-friendly, and to include the current checklist.
 """
 
+import argparse
 import pathlib
 import re
 import subprocess  # noqa: S404
 from typing import TypedDict, cast
+
+import evaluate
 
 BEST_PRACTICE_RE_MD = re.compile(
     r'```{admonition} Best practice\s*(?:.*?\n)?([\s\S]*?)```',
@@ -151,6 +154,8 @@ IGNORED_BEST_PRACTICES = {
 
 def extract_best_practice_blocks(file_path: pathlib.Path):
     """Extracts 'Best practice' blocks from a file."""
+    remove_pattern: str | None = None
+    matches: list[str] = []
     content = file_path.read_text()
     if file_path.suffix == '.md':
         matches = BEST_PRACTICE_RE_MD.findall(content)
@@ -158,6 +163,9 @@ def extract_best_practice_blocks(file_path: pathlib.Path):
     elif file_path.suffix == '.rst':
         matches = BEST_PRACTICE_RE_REST.findall(content)
         remove_pattern = r'^\s+'
+    assert remove_pattern is not None, 'Unsupported file type for best practices extraction.'
+    if not matches:
+        return matches
     return [
         re.sub(remove_pattern, '', match, flags=re.MULTILINE).strip().replace('\n', ' ')
         for match in matches
@@ -166,7 +174,7 @@ def extract_best_practice_blocks(file_path: pathlib.Path):
 
 def find_best_practices(path_to_ops: pathlib.Path, path_to_charmcraft: pathlib.Path):
     """Recursively located best practice blocks in Ops and Charmcraft."""
-    checklist = []
+    checklist: list[str] = []
     for directory in (path_to_ops, path_to_charmcraft):
         for file_path in directory.rglob('*'):
             if file_path.suffix in ('.md', '.rst'):
@@ -245,11 +253,8 @@ def get_details_from_issue(issue_number: int):
     return cast('_IssueData', issue_data)
 
 
-if __name__ == '__main__':
-    import argparse
-
-    import evaluate
-
+def main():
+    """Extract information from the issue and post/update a review comment."""
     parser = argparse.ArgumentParser(
         description='Update a GitHub issue for a charm listing review.'
     )
@@ -344,3 +349,7 @@ if __name__ == '__main__':
                 ['gh', 'issue', 'comment', str(args.issue_number), '--body', comment],  # noqa: S607
                 check=True,
             )
+
+
+if __name__ == '__main__':
+    main()

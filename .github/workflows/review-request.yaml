@@ -3,6 +3,8 @@ name: Review Listing Request
 on:
   issues:
     types: [opened, labeled]
+  issue_comment:
+    types: [created, edited]
 
 permissions: {}
 
