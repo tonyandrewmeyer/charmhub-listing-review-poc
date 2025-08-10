@@ -40,6 +40,7 @@ import subprocess  # noqa: S404
 import tempfile
 import tomllib
 import xml.etree.ElementTree as ET  # noqa: S405
+from typing import Any
 
 import requests
 import yaml
@@ -54,7 +55,7 @@ def evaluate(
     security_url: str,
 ) -> list[str]:
     """Evaluate the charm for listing on Charmhub."""
-    results = []
+    results: list[str] = []
     repo_dir = _clone_repo(repository_url)
     try:
         results.append(coding_conventions(linting_url))
@@ -188,7 +189,7 @@ def _clone_repo(charm_repo_url: str) -> pathlib.Path:
         raise
 
 
-def _get_charmcraft_yaml(repo_dir: pathlib.Path) -> dict:
+def _get_charmcraft_yaml(repo_dir: pathlib.Path) -> dict[Any, Any] | None:
     charmcraft_path = repo_dir / 'charmcraft.yaml'
     if not charmcraft_path.is_file():
         return None
@@ -207,9 +208,11 @@ def metadata_links(repo_dir: pathlib.Path) -> str:
     The repository contains a `charmcraft.yaml` file that includes fields for
     name, title, summary, and description that are not the default profile
     values. A links field includes fields for documentation, issues, source,
-    and contact, which all resolve with a 2xx status code.
+    website, and contact, which all resolve with a 2xx status code.
     """
     data = _get_charmcraft_yaml(repo_dir)
+    if not data:
+        return '* [ ] charmcraft.yaml includes required metadata.'
     default_desc = """A single sentence that says what the charm is, concisely and memorably.
 
 A paragraph of one to three short sentences, that describe what the charm does.
@@ -229,9 +232,12 @@ Finally, a paragraph that describes whom the charm is useful for.\n"""
             return '* [ ] charmcraft.yaml includes required metadata.'
 
     links = data.get('links', {})
-    link_fields = ['documentation', 'issues', 'source', 'contact']
+    link_fields = ['documentation', 'issues', 'source', 'website', 'contact']
     for field in link_fields:
         url = links.get(field)
+        # Contact only needs to be a string.
+        if field == 'contact':
+            continue
         if not url:
             return '* [ ] charmcraft.yaml includes required metadata.'
         try:
@@ -417,7 +423,7 @@ def charmcraft_tooling(repo_dir: pathlib.Path) -> str:
         return description
 
     # Check for commands in the files
-    commands = {'format', 'unit', 'integration'}
+    commands = {'format', 'lint', 'unit', 'integration'}
     found_commands: set[str] = set()
     commands_to_run: list[list[str]] = []
     file_path = repo_dir / filename
@@ -515,7 +521,7 @@ def python_requires_version(repo_dir: pathlib.Path) -> str:
     return description
 
 
-def repo_has_lock_file(repo_dir: pathlib.Path) -> bool:
+def repo_has_lock_file(repo_dir: pathlib.Path) -> str:
     """Both the pyproject.toml and lock file should be present in the repository.
 
     This allows reproducible builds and ensures that the charm's dependencies

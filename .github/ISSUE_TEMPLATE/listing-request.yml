@@ -74,27 +74,3 @@ body:
       description: "Please provide the link to the charm's documentation."
     validations:
       required: true
-
-  - type: input
-    id: Contribution-Link
-    attributes:
-      label: "Contribution Link"
-      description: "Please provide the link to the charm's contribution guidelines."
-    validations:
-      required: true
-
-  - type: input
-    id: License-Link
-    attributes:
-      label: "License Link"
-      description: "Please provide the link to the charm's license."
-    validations:
-      required: true
-
-  - type: input
-    id: Security-Link
-    attributes:
-      label: "Security Link"
-      description: "Please provide the link to the charm's security documentation."
-    validations:
-      required: true
