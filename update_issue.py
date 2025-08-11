@@ -1,5 +1,11 @@
 #! /usr/bin/env python3
 
+# /// script
+# dependencies = [
+#   "pyyaml"
+# ]
+# ///
+
 # Copyright 2025 Canonical Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +29,12 @@ created issue to be user-friendly, and to include the current checklist.
 
 import argparse
 import pathlib
+import random
 import re
 import subprocess  # noqa: S404
 from typing import TypedDict, cast
+
+import yaml
 
 import evaluate
 
@@ -265,6 +274,37 @@ def get_details_from_issue(issue_number: int):
     issue_data['security_link'] = f'{issue_data["project_repo"]}/blob/main/SECURITY.md'
 
     return cast('_IssueData', issue_data)
+
+
+def assign_review(issue_number: int):
+    """Assign the issue to a team.
+
+    We assign the issue to a single person (generally the manager) from a
+    charming team. The expectation is that they will then delegate the actual
+    review to a member of their team. The manager has overall responsibility for
+    ensuring that the review is completed on time (with Charm Tech responsible
+    for keeping the manager accountable).
+
+    The manager can't assign the issue directly to a reviewer (without having
+    every possible reviewer added as a collaborator on the repository), so they
+    are expected to simply ping them in a comment. Once they have submitted
+    their review, the author can interact with them in the usual way.
+    """
+    reviewers_file = pathlib.Path(__file__).parent / 'reviewers.yaml'
+    with reviewers_file.open('r') as f:
+        reviewers_data = yaml.safe_load(f)
+    reviewers = reviewers_data['reviewers']
+    teams = [info['team'] for info in reviewers.values()]
+    team = random.choice(teams)  # noqa: S311
+    # If there happen to be multiple people in a team, then randomly pick among
+    # them.
+    team_reviewers = [name for name, info in reviewers.items() if info['team'] == team]
+    reviewer = random.choice(team_reviewers)  # noqa: S311
+
+    subprocess.run(  # noqa: S603
+        ['gh', 'issue', 'edit', str(issue_number), '--assignee', reviewer],  # noqa: S607
+        check=True,
+    )
 
 
 def main():
