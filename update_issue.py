@@ -350,7 +350,7 @@ def main():
         # If there is already a first comment that we posted, then update it with the latest
         # content. Otherwise, create a new comment.
         existing_comments = subprocess.run(  # noqa: S603
-            ['gh', 'issue', 'comment', str(args.issue_number), '--json', 'body'],  # noqa: S607
+            ['gh', 'issue', 'view', str(args.issue_number), '--json', 'comments'],  # noqa: S607
             capture_output=True,
             text=True,
             check=True,
