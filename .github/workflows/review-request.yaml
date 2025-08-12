@@ -12,9 +12,6 @@ jobs:
   review-listing-request:
     if: contains(github.event.label.name, 'listing-request')
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      contents: read
     steps:
       - name: Checkout this repository
         uses: actions/checkout@v4
@@ -39,6 +36,9 @@ jobs:
 
       - name: Install runners
         run: |
+          sudo snap install just --classic
+          uv tool install tox --with tox-uv
+
       - name: Update issue summary and description
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
