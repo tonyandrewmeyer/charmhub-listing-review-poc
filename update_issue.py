@@ -2,7 +2,8 @@
 
 # /// script
 # dependencies = [
-#   "pyyaml"
+#   "pyyaml",
+#   "requests"
 # ]
 # ///
 
