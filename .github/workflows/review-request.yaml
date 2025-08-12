@@ -36,7 +36,7 @@ jobs:
 
       - name: Install runners
         run: |
-          snap install just --classic
+          sudo snap install just --classic
           uv tool install tox --with tox-uv
 
       - name: Update issue summary and description
