@@ -12,6 +12,9 @@ jobs:
   review-listing-request:
     if: contains(github.event.label.name, 'listing-request')
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
     steps:
       - name: Checkout this repository
         uses: actions/checkout@v4
