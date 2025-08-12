@@ -21,12 +21,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # These are used to extract the best practices from the docs.
       - name: Checkout operator
         uses: actions/checkout@v4
         with:
+          repository: canonical/operator
+          path: operator
           persist-credentials: false
-
-      # This is used to extract the best practices from the docs.
       - name: Checkout charmcraft
         uses: actions/checkout@v4
         with:
