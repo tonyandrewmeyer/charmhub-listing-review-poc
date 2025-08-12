@@ -29,6 +29,7 @@ created issue to be user-friendly, and to include the current checklist.
 """
 
 import argparse
+import json
 import pathlib
 import random
 import re
@@ -355,7 +356,7 @@ def main():
             text=True,
             check=True,
         )
-        existing_comments = existing_comments.stdout.strip()
+        existing_comments = json.loads(existing_comments.stdout.strip()).get('comments', [])
         if existing_comments:
             # Update the first comment with the new content.
             subprocess.run(  # noqa: S603
@@ -364,7 +365,7 @@ def main():
                     'issue',
                     'comment',
                     str(args.issue_number),
-                    '--edit',
+                    '--edit-last',
                     existing_comments.splitlines()[0],
                     '--body',
                     comment,
