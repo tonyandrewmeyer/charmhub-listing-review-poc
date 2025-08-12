@@ -73,6 +73,7 @@ def evaluate(
         results.append(python_requires_version(repo_dir))
         results.append(repo_has_lock_file(repo_dir))
         results.append(charm_has_icon(repo_dir))
+        results.append(charm_lib_docs(repo_dir))
     finally:
         shutil.rmtree(str(repo_dir), ignore_errors=True)
     return results
@@ -584,6 +585,38 @@ def charm_has_icon(repo_dir: pathlib.Path) -> str:
             if vb_width == 100 and vb_height == 100:
                 return '* [x] The charm has an icon.'
     return '* [ ] The charm has an icon.'
+
+
+def charm_lib_docs(repo_dir: pathlib.Path) -> str:
+    """If the charm contains Charmhub libraries, they are appropriately documented."""
+    # We don't actually automate checking this, we just provide (or not) the
+    # checks the reviewer is expected to do.
+    with (repo_dir / 'charmcraft.yaml').open() as f:
+        data = yaml.safe_load(f)
+        charm_name = data['name']
+    if not (repo_dir / 'lib' / 'charms' / charm_name).glob('*/*.py'):
+        # The charm does not provide a Charmhub library, so skip including any items.
+        return ''
+    # fmt: off
+    description = (
+        re.sub(
+            r'\n^\n',
+            ' ',
+            """
+If the charm provides an interface library, the library's module docstring must contain the following information:
+* [ ] the interface(s) this library is for, and if it takes care of one or both of the providing/requiring sides
+* [ ] guidance on how to start when using the library to implement their end of the interface
+
+If the charm provides a general library, the library's module docstring must contain the following information:
+* [ ] the purpose of the library
+* [ ] the intended audience for the library: is this library intended for use only by the charm or the charming team, or is it a public library intended for anyone to use in their charm?
+* [ ] guidance on how to start using the library
+""".strip(),  # noqa: E501
+        )
+    )
+    # fmt: on
+
+    return description
 
 
 if __name__ == '__main__':

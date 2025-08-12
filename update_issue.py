@@ -59,7 +59,6 @@ def issue_comment(
     ci_release_url: str,
     ci_integration_url: str,
     documentation_link: str,
-    has_library: bool,
     path_to_ops: pathlib.Path,
     path_to_charmcraft: pathlib.Path,
 ):
@@ -107,26 +106,6 @@ A charm's documentation should focus on the charm itself. For workload-specific 
     )
 
     # fmt: on
-    if has_library:
-        description.append('\n\n')
-        # fmt: off
-        description.append(
-            re.sub(
-                r'\n^\n',
-                ' ',
-                """
-If the charm provides an interface library, the library's module docstring must contain the following information:
-* [ ] the interface(s) this library is for, and if it takes care of one or both of the providing/requiring sides
-* [ ] guidance on how to start when using the library to implement their end of the interface
-
-If the charm provides a general library, the library's module docstring must contain the following information:
-* [ ] the purpose of the library
-* [ ] the intended audience for the library: is this library intended for use only by the charm or the charming team, or is it a public library intended for anyone to use in their charm?
-* [ ] guidance on how to start using the library
-""".strip(),  # noqa: E501
-            )
-        )
-        # fmt: on
     best_practices = find_best_practices(
         path_to_ops=path_to_ops, path_to_charmcraft=path_to_charmcraft
     )
@@ -215,7 +194,6 @@ class _IssueData(TypedDict):
 
     name: str
     demo_url: str
-    has_library: bool
     project_repo: str
     ci_linting: str
     ci_release_url: str
@@ -244,7 +222,6 @@ def get_details_from_issue(issue_number: int):
     fields = {
         'name': '### Charm name',
         'demo_url': '### Demo',
-        'has_library': '### Charm Libraries',
         'project_repo': '### Project Repository',
         'ci_linting': '### CI Linting',
         'ci_release_url': '### CI Release',
@@ -259,10 +236,7 @@ def get_details_from_issue(issue_number: int):
         match = re.search(pattern, body)
         if match:
             value = match.group(1).strip()
-            if key == 'has_library':
-                issue_data[key] = value.lower() in ('yes', 'true', '1')
-            else:
-                issue_data[key] = value
+            issue_data[key] = value
         else:
             issue_data[key] = None
 
@@ -341,7 +315,6 @@ def main():
         issue_data['ci_release_url'],
         issue_data['ci_integration_url'],
         issue_data['documentation_link'],
-        issue_data['has_library'],
         args.path_to_ops,
         args.path_to_charmcraft,
     )
