@@ -86,29 +86,9 @@ def coding_conventions(linting_url: str) -> str:
     Consistent source code style and formatting are also considered a sign of
     being committed to quality.
     """
-    try:
-        response = requests.get(linting_url, allow_redirects=True, timeout=5)
-        if not response.ok:
-            return '* [ ] The charm implements coding conventions in CI.'
-    except requests.RequestException:
-        return '* [ ] The charm implements coding conventions in CI.'
-    content = response.text.lower()
-    try:
-        workflow = yaml.safe_load(content)
-    except Exception:
-        return '* [ ] The charm implements coding conventions in CI.'
-    # TODO: This won't work for charms that call out to another workflow.
-    keywords = ['make lint', 'just lint', 'tox -e lint']
-    try:
-        jobs = workflow.get('jobs', {})
-        for job in jobs.values():
-            steps = job.get('steps', [])
-            for step in steps:
-                run_cmd = step.get('run', '')
-                if any(keyword in run_cmd for keyword in keywords):
-                    return '* [x] The charm implements coding conventions in CI.'
-    except Exception:  # noqa: S110  We should add logging here later.
-        pass
+    # We'll work on automating this in the future. Before we do that, we'll want
+    # to figure out how much consistency there is in CI across charms, and if we
+    # should encourage more.
     return '* [ ] The charm implements coding conventions in CI.'
 
 
