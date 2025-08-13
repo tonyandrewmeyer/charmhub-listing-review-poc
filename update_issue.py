@@ -96,9 +96,10 @@ Please provide your review within *three working days*. If blocking issues are f
 * [ ] [Integration tests]({ci_integration_url}) exist, are run on every change to the default branch, and are passing. At minimum, the tests verify that the charm can be deployed and ends up in a success state, and that the charm can be integrated with at least one example for each 'provides' and 'requires' specified (including optional, excluding tracing) ending up in a success state. The tests should be run with `charmcraft test`.
 """.strip()  # noqa: E501
     ]
+    description.append('\n\n')
     description.append(
         """
-## Documentation
+### Documentation
 
 A charm's documentation should focus on the charm itself. For workload-specific or Juju-related content, link to the appropriate upstream documentation. A smaller charm can have single-page documentation for its description. A bigger charm should include a full Diátaxis navigation tree. Check that the charm has documentation that covers:
 * [ ] How to use the charm, including configuration, limitations, and deviations in behaviour from the “non-charmed” version of the application.
@@ -115,7 +116,7 @@ A charm's documentation should focus on the charm itself. For workload-specific 
         description.append('\n\n')
         description.append(
             f"""
-## Best practices
+### Best practices
 
 The following best practices are recommended for all charms, and are also
 required for listing.
@@ -124,6 +125,7 @@ required for listing.
 """.strip()
         )
 
+    description.append('\n\n')
     description.append(
         """
 ## Additional checks
@@ -132,7 +134,7 @@ The following checks are not required for listing, but are recommended for all c
 
 * [ ] A user can deploy the charm with a sensible default configuration.
 * [ ] The charm exposes provides / requires interfaces for integration ready to be adopted by the ecosystem.
-* [ ] The upgrades the application safely, preserving data and settings, and minimising downtime.
+* [ ] The charm upgrades the application safely, preserving data and settings, and minimising downtime.
 * [ ] The charm supports scaling up and down, if the application permits or supports it.
 * [ ] The charm supports backup and restore, if the application permits or supports it.
 * [ ] The charm is integrated with observability, including metrics, alerting, and logging.

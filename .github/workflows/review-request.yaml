@@ -50,4 +50,4 @@ jobs:
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            uv run update_issue.py --issue-number "${{ github.event.issue.number }}"
+            uv run update_issue.py --issue-number "${{ github.event.issue.number }}" --path-to-ops=operator --path-to-charmcraft=charmcraft
