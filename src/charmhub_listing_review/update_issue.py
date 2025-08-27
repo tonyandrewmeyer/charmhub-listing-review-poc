@@ -306,7 +306,7 @@ def update_gh_issue(issue_number: int, summary: str, comment: str):
     )
     assignees = json.loads(gh.stdout.strip()).get('assignees', [])
     if assignees:
-        manager = assignees[0]
+        manager = assignees[0]['login']
     else:
         # If there are no assignees, then we need to assign the issue.
         manager = assign_review(issue_number)
@@ -341,7 +341,7 @@ review within the next three working days.
     reviewer = None
     for existing_comment in existing_comments:
         if existing_comment['author']['login'] == manager:
-            reviewer = body.split('@', 1)[1].split(' ')[0]
+            reviewer = existing_comment['body'].split('@', 1)[1].split(' ')[0]
             continue
         if existing_comment['author']['login'] != reviewer:
             continue
