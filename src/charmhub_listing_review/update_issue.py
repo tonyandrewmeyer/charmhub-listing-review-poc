@@ -365,7 +365,6 @@ review within the next three working days.
             'comment',
             str(issue_number),
             '--edit-last',  # comment of the current user
-            existing_comments.splitlines()[0],
             '--body',
             comment,
         ],
