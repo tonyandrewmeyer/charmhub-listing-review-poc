@@ -50,5 +50,6 @@ jobs:
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+            uv venv
             uv pip install .
             uv run update-issue --issue-number "${{ github.event.issue.number }}" --path-to-ops=operator --path-to-charmcraft=charmcraft
