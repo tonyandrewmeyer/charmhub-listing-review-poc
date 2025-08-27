@@ -341,8 +341,14 @@ review within the next three working days.
     reviewer = None
     for existing_comment in existing_comments:
         if existing_comment['author']['login'] == manager:
-            reviewer = existing_comment['body'].split('@', 1)[1].split(' ')[0]
-            continue
+            try:
+                reviewer = existing_comment['body'].split('@', 1)[1].split(' ')[0]
+            except IndexError:
+                # TODO: This should probably logger.warn, although it's only going to appear in the
+                # CI output.
+                print("Unable to find reviewer in", existing_comment)
+            else:
+                continue
         if existing_comment['author']['login'] != reviewer:
             continue
         for line in existing_comment['body'].splitlines():
