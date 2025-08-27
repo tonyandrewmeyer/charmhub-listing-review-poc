@@ -16,6 +16,8 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
+    "PyYAML==6.*",
+    "requests~=2.32",
 ]
 
 [dependency-groups]
