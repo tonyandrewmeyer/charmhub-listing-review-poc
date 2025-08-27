@@ -32,6 +32,7 @@ for the reviewer, and is also a way for charm publishers to check their charm
 against the listing requirements before submitting a listing request.
 """
 
+import argparse
 import hashlib
 import pathlib
 import re
@@ -599,10 +600,7 @@ If the charm provides a general library, the library's module docstring must con
     return description
 
 
-if __name__ == '__main__':
-    # For testing purposes.
-    import argparse
-
+def main():
     parser = argparse.ArgumentParser(description='Evaluate a charm for listing on Charmhub.')
     parser.add_argument('repository_url', help='The URL of the charm repository')
     parser.add_argument('linting_url', help='The URL of the linting configuration')
@@ -623,3 +621,7 @@ if __name__ == '__main__':
             )
         )
     )
+
+
+if __name__ == '__main__':
+    main()

@@ -1,6 +1,6 @@
 We welcome contributions to the Charmhub listing review process!
 
-Before working on changes, please consider [opening an issue](https://github.com/tonyandrewmeyer/charmhub-listing-review/issues) explaining your use case. If you would like to chat with us about your use cases or proposed implementation, you can reach us at [Matrix](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) or [Discourse](https://discourse.charmhub.io/).
+Before working on changes, please consider [opening an issue](https://github.com/canonical/charmhub-listing-review/issues) explaining your use case. If you would like to chat with us about your use cases or proposed implementation, you can reach us at [Matrix](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) or [Discourse](https://discourse.charmhub.io/).
 
 # Recommendations for process changes
 
@@ -50,7 +50,7 @@ If the requirement cannot be automatically evaluated, add it to the [issue scrip
 
 # Pull requests
 
-Changes are proposed as [pull requests on GitHub](https://github.com/tonyandrewmeyer/charmhub-listing-review/pulls).
+Changes are proposed as [pull requests on GitHub](https://github.com/canonical/charmhub-listing-review/pulls).
 
 Pull requests should have a short title that follows the [conventional commit style](https://www.conventionalcommits.org/en/) using one of these types:
 

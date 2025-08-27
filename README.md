@@ -1,68 +1,72 @@
-# How to request a review for charm for being listed on charmhub.io?
+# Requests for public listing on charmhub.io
 
-Reviewing charms encourages the involvement of the community. The community refers to individuals and organisations creating or contributing to charms, Juju and the wider charming ecosystem. The goals of the review are:
+Charms on [Charmhub](https://charmhub.io) are either privately listed, meaning
+that they can be deployed and their page viewed only if you know the name of the
+charm, or publicly listed, meaning that they can be found when searching (either
+on Charmhub itself or a more general web search leading to Charmhub).
+
+Anyone can publish a charm to Charmhub, and when first published it will be
+privately listed. To change the charm to be publicly listed requires passing a
+lightweight review process to ensure charm consistency and quality. This is a
+one-off process (in most circumstances), not done for each revision of a charm.
+
+Reviewing charms encourages the involvement of the community. The community
+refers to individuals and organisations creating or contributing to charms,
+Juju, and the wider charming ecosystem. The goals of the review are:
 
 1. Be transparent about the capabilities and qualities of a charm.
 2. Ensure a common level of quality.
 
-A listing review is *not* code review. The reviewer may be looking at some of the charm code, and may have comments on it, but the listing review is not a review of the architecture or design of the charm, and is not a line-by-line review of the charm code.
+A listing review is *not* code review. The reviewer may be looking at some of
+the charm code, and may have comments on it, but the listing review is not a
+review of the architecture or design of the charm, and is not a line-by-line
+review of the charm code.
 
-## Key considerations
+This repository contains:
 
-1. The process is streamlined: The party requesting the review provides structured evidence as input to the review process.
-2. A review is transparent for the community. Review and the review comments are public.
-3. Everyone can participate in the review, for example, participate in a discussion in a GitHub issue. A review may benefit from the expertise of a reviewer in the relevant field. Thus, the review process is flexible and open to involving multiple persons.
-4. The review covers the effective automation of tests for automated approvals of subsequent releases.
+* Issues that are requests for changing a charm to be publicly listed.
+* Infrastructure to support the review process (such as automatically assigning
+  reviews, tools to check some criteria automatically, and so on).
 
 ## Steps of a review
 
-The specification provides details and summaries of how the review works. However, the overall approach is straightforward:
-
-1. The author requests a review for *one* charm at a time with all prerequisites using a [listing request issue](https://github.com/tonyandrewmeyer/charmhub-listing-review/issues/new) in this repository.
-2. The reviewer checks if the prerequisites are met and the pull request is ready.
+1. The author requests a review for *one* charm at a time with all prerequisites
+   using a [listing request issue](https://github.com/canonical/charmhub-listing-review/issues/new)
+   in this repository.
+2. The reviewer checks if the prerequisites are met and the pull request is
+   ready.
 3. The public review is carried out as a conversation on the pull request.
-4. The review concludes if the charm is 'publication ready'.
-5. If the review is at least 'publication-ready', the store team is asked to list the charm.
+4. The review concludes if the charm is 'publication ready', and if so the store
+   team is asked to list the charm.
 
 The result of the process is that:
 * if the review is successful, the charm is switched to listed mode, or
-* if the review is unsuccessful, the charm does not reach the required criteria and the charm remains unlisted, until the issues are resolved.
+* if the review is unsuccessful, the charm does not reach the required criteria
+  and the charm remains unlisted, until the issues are resolved.
 
-## Roles and concepts
+## Get ready
 
-|Role or item|Description|
-| --- | --- |
-|Author|Author of the charm or person representing the organisation. The person submitting the charm for review is called the author in this document.|
-|Publisher|The responsible person or organisation for publishing the charm.|
-|Review group|A group of contact persons watching for review requests to arrive and requesting modifications or assigning a review to a suitable reviewer. This is currently the Canonical Charm Tech team.|
-|Reviewer|Person conducting the review.|
-|Listing|After the reviewer has reviewed the charm successfully, it can be switched to 'listing'. Listing means that the charm will be part of the search result when querying the Web pages and API of Charmhub.io. Without 'listing', the charm will be available under its URL but is not listed in searches.|
+Read the [documentation](https://documentation.ubuntu.com/ops/latest/howto/request-public-listing/)
+for detailed information about publicly listed charms, the review process, and
+the criteria for public listing.
 
-The charm listing criteria consists of:
+You can also use the tooling from this repository to see how close the charm is
+to passing a review. Note that some of the criteria can be checked automatically
+(and those will be when running the tool), but others will be manually checked
+by the reviewer (so you will need to evaluate readiness in those areas
+yourself).
 
-* A set of automated checks (for example: is there a license file?)
-* A set of manual checks, which are shown in a checklist in the issue
-* Reviewing the charm against current charming best practices, which are automatically collated from the charming ecosystem documentation and also included in a checklist in the issue
+## Get started
 
-## Review prerequisites
+If the charm is ready for review,
+[open an issue in this repository](https://github.com/canonical/charmhub-listing-review/issues/new).
 
-The process has the following prerequisites to be delivered by the author. The issue template for a listing request will prompt the author for this information:
+## Next steps
 
-1. The charm source code is accessible for reviewers and an URL to a (git) source code repository is available.
-2. Information for the reviewer to verify that the charm behaves as expected - in simple cases, a tutorial is a good method for this. In more complex cases, and particularly when specific resources are required, a demo call or video is a better choice.
-3. URLs for CI workflows and specific documentation.
-4. Publisher details.
-
-# Get started
-
-If the charm is ready for review, [open an issue in this repository](https://github.com/tonyandrewmeyer/charmhub-listing-review/issues/new).
-
-
-
-
-
-TODO: Something like this needs to go into the charmcraft docs, with a link to the new process, once everything is complete & ready.
-
-## Requirements for public listing
-
-Everyone can publish charms to [https://charmhub.io/](https://charmhub.io/). Then, the charm can be accessed for deployments using Juju or via a web browser by its URL. If a charm is published in Charmhub.io and included in search results, the charm entry needs to be switched into the listed mode. To bring your charm into the listing, [reach out to the community](https://discourse.charmhub.io/c/charmhub-requests/46) to announce your charm and ask for a review by an experienced community member.
+- Read the [docs](https://documentation.ubuntu.com/ops/latest/).
+- Read our [Code of conduct](https://ubuntu.com/community/code-of-conduct) and
+  join our [chat](https://matrix.to/#/#charmhub-ops:ubuntu.com) and
+  [forum](https://discourse.charmhub.io/) to get help polishing your charm or
+  with the public listing review process.
+- Read our [CONTRIBUTING guide](https://github.com/canonical/charmhub-listing-review/blob/main/CONTRIBUTING.md)
+  and contribute!
