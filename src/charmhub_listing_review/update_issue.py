@@ -285,7 +285,7 @@ def assign_review(issue_number: int):
     reviewer = random.choice(team_reviewers)  # noqa: S311
 
     subprocess.run(  # noqa: S603
-        ['gh', 'issue', 'edit', str(issue_number), '--assignee', reviewer],  # noqa: S607
+        ['gh', 'issue', 'edit', str(issue_number), '--add-assignee', reviewer],  # noqa: S607
         check=True,
     )
     return reviewer
