@@ -38,7 +38,7 @@ from typing import TypedDict, cast
 
 import yaml
 
-from . import evaluate
+from .evaluate import evaluate
 
 BEST_PRACTICE_RE_MD = re.compile(
     r'```{admonition} Best practice\s*(?:.*?\n)?([\s\S]*?)```',
@@ -373,7 +373,7 @@ review within the next three working days.
 
 
 def apply_automated_checks(issue_data: _IssueData, comment: str):
-    results = evaluate.evaluate(
+    results = evaluate(
         issue_data['name'],
         issue_data['project_repo'],
         issue_data['ci_linting'],
