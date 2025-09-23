@@ -74,9 +74,7 @@ def issue_comment(
     # fmt: off
     description = [
         f"""
-Please review the charm by checking each of the items in the following checklist.
-
-Please provide your review within *three working days*. If blocking issues are found, please help the author work through those, and respond to any follow-up posts within *one working day*.
+Reviewer: Please review the charm, **within three working days** by checking each of the items in the following checklist. If blocking issues are found, please help the author work through those, and respond to any follow-up posts within *one working day*.
 
 If you find other improvements or fixes that could be made to the charm, feel free to suggest those, but **they do not block listing**. If you find something that's missing from the review checklist or best practices, please separately suggest that (see [CONTRIBUTING.md](../CONTRIBUTING.md)) so that we can keep the review process consistent.
 
@@ -131,22 +129,6 @@ required for listing.
 """.strip()
         )
 
-    description.append('\n\n')
-    description.append(
-        """
-## Additional checks
-
-The following checks are not required for listing, but are recommended for all charms.
-
-* [ ] A user can deploy the charm with a sensible default configuration.
-* [ ] The charm exposes provides / requires interfaces for integration ready to be adopted by the ecosystem.
-* [ ] The charm upgrades the application safely, preserving data and settings, and minimising downtime.
-* [ ] The charm supports scaling up and down, if the application permits or supports it.
-* [ ] The charm supports backup and restore, if the application permits or supports it.
-* [ ] The charm is integrated with observability, including metrics, alerting, and logging.
-* [ ] The model-config `juju-http-proxy`, `juju-https-proxy`, and `juju-no-proxy` options should influence the charm's behavior when the charm or charm workload makes any HTTP request.
-""".strip()  # noqa: E501
-    )
     description.append('\n```\n</details>\n')
 
     return ''.join(description)
