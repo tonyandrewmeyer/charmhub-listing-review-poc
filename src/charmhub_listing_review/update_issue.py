@@ -34,6 +34,7 @@ import pathlib
 import random
 import re
 import subprocess  # noqa: S404
+import sys
 from typing import TypedDict, cast
 
 import yaml
@@ -66,13 +67,16 @@ def issue_comment(
 ):
     """Provide a suitable issue comment.
 
-    The comment outlines what is required by the reviewer and what the current
-    progress against the review is.
+    The comment outlines what is required by the reviewer. It will pre-tick any
+    of the items that can be automatically checked, as they are at the time of
+    the initial comment.
     """
     # fmt: off
     description = [
         f"""
 Please review the charm by checking each of the items in the following checklist.
+
+Please provide your review within *three working days*. If blocking issues are found, please help the author work through those, and respond to any follow-up posts within *one working day*.
 
 If you find other improvements or fixes that could be made to the charm, feel free to suggest those, but **they do not block listing**. If you find something that's missing from the review checklist or best practices, please separately suggest that (see [CONTRIBUTING.md](../CONTRIBUTING.md)) so that we can keep the review process consistent.
 
@@ -85,8 +89,10 @@ When reviewing test coverage of the charm, note that:
 * There is no minimum for test coverage. We suggest that tests cover at least all configuration options and actions, as well as the observed Juju events, but this is not a requirement for listing.
 * Some charms may have additional tests in an external location, particularly if the charm has specific resource requirements (such as specific hardware).
 
-Please provide your review within *three working days*. If blocking issues are found, please help the author work through those, and respond to any follow-up posts within *one working day*.
+<details>
+<summary>Reviewer: copy this list of requirements to a separate comment</summary>
 
+```
 ## Listing requirements
 
 * [ ] The charm does what it is meant to do, per the [demo or tutorial]({demo_url}).
@@ -141,24 +147,9 @@ The following checks are not required for listing, but are recommended for all c
 * [ ] The model-config `juju-http-proxy`, `juju-https-proxy`, and `juju-no-proxy` options should influence the charm's behavior when the charm or charm workload makes any HTTP request.
 """.strip()  # noqa: E501
     )
+    description.append('\n```\n</details>\n')
 
     return ''.join(description)
-
-
-# TODO: It would be better to amend the docs so that we don't have these issues
-# than to have a manually curated set of practices to ignore.
-IGNORED_BEST_PRACTICES = {
-    # This is covered by the more extensive items above. It's also duplicated in
-    # the docs.
-    '* [ ] The quality assurance pipeline of a charm should be automated using a '
-    'continuous integration (CI) system.',
-    # This is duplicated by another best practice note.
-    "* [ ] If you're setting up a ``git`` repository: name it using the pattern "
-    '``<charm name>-operator``. For the charm name, see :ref:`specify-a-name`.',
-    # These don't seem like best practice notes -- we should adjust the docs.
-    '* [ ] Smaller charm documentation examples:',
-    '* [ ] Bigger charm documentation examples:',
-}
 
 
 def extract_best_practice_blocks(file_path: pathlib.Path):
@@ -190,7 +181,6 @@ def find_best_practices(path_to_ops: pathlib.Path, path_to_charmcraft: pathlib.P
                 practices = (
                     practice
                     for practice in extract_best_practice_blocks(file_path)
-                    if practice not in IGNORED_BEST_PRACTICES
                 )
                 checklist.extend(practices)
     checklist.sort()
@@ -215,18 +205,17 @@ class _IssueData(TypedDict):
 def get_details_from_issue(issue_number: int):
     """Fetch details from the issue number using the GitHub CLI.
 
-    Requires `gh` CLI to be installed and authenticated, and `jq` to be
-    available.
+    Requires `gh` CLI to be installed and authenticated.
     """
-    result = subprocess.run(  # noqa: S603
-        ['gh', 'issue', 'view', str(issue_number), '--json', 'body', '--jq', '.body'],  # noqa: S607
+    result = subprocess.run(
+        ['gh', 'issue', 'view', str(issue_number), '--json', 'body'],
         capture_output=True,
         text=True,
         check=True,
     )
-    body = result.stdout
+    body = json.loads(result.stdout)['body']
 
-    # Define the fields to extract and their headings
+    # Define the fields to extract and their headings.
     fields = {
         'name': '### Charm name',
         'demo_url': '### Demo',
@@ -237,7 +226,7 @@ def get_details_from_issue(issue_number: int):
         'documentation_link': '### Documentation Link',
     }
 
-    # Extract values for each field
+    # Extract values for each field.
     issue_data: dict[str, bool | str | None] = {}
     for key, heading in fields.items():
         pattern = rf'{re.escape(heading)}\s*\n([^\n]*)'
@@ -258,7 +247,7 @@ def get_details_from_issue(issue_number: int):
     return cast('_IssueData', issue_data)
 
 
-def assign_review(issue_number: int):
+def assign_review(issue_number: int, dry_run: bool = False):
     """Assign the issue to a team.
 
     We assign the issue to a single person (generally the manager) from a
@@ -272,8 +261,10 @@ def assign_review(issue_number: int):
     are expected to simply ping them in a comment. Once they have submitted
     their review, the author can interact with them in the usual way.
     """
-    # TODO: Figure out where this should be and how the script should locate it.
-    reviewers_file = pathlib.Path('/home/runner/work/charmhub-listing-review/charmhub-listing-review/') / 'reviewers.yaml'
+     # TODO: Figure out where this should be and how the script should locate it.
+    reviewers_file = pathlib.Path(
+        '/home/runner/work/charmhub-listing-review/charmhub-listing-review/reviewers.yaml'
+    )
     with reviewers_file.open('r') as f:
         reviewers_data = yaml.safe_load(f)
     reviewers = reviewers_data['reviewers']
@@ -284,32 +275,34 @@ def assign_review(issue_number: int):
     team_reviewers = [name for name, info in reviewers.items() if info['team'] == team]
     reviewer = random.choice(team_reviewers)  # noqa: S311
 
-    subprocess.run(  # noqa: S603
-        ['gh', 'issue', 'edit', str(issue_number), '--add-assignee', reviewer[1:]],  # noqa: S607
-        check=True,
-    )
+    if not dry_run:
+        subprocess.run(
+            ['gh', 'issue', 'edit', str(issue_number), '--add-assignee', reviewer[1:]],
+            check=True,
+        )
     return reviewer
 
 
-def update_gh_issue(issue_number: int, summary: str, comment: str):
-    # Update the issue title:
-    subprocess.run(  # noqa: S603
-        ['gh', 'issue', 'edit', str(issue_number), '--title', summary],  # noqa: S607
-        check=True,
-    )
+def update_gh_issue(issue_number: int, summary: str, comment: str, dry_run: bool = False):
+    """Update the specified GitHub issue with the latest generated comment."""
+    # Update the issue title.
+    if dry_run:
+        print(summary)
+        print()
+    else:
+        subprocess.run(
+            ['gh', 'issue', 'edit', str(issue_number), '--title', summary],
+            check=True,
+        )
 
     # Assign the issue, if it is not already.
-    gh = subprocess.run(  # noqa: S603
+    gh = subprocess.run(
         ['gh', 'issue', 'view', str(issue_number), '--json', 'assignees'],
         capture_output=True,
         text=True,
     )
     assignees = json.loads(gh.stdout.strip()).get('assignees', [])
-    if assignees:
-        manager = assignees[0]['login']
-    else:
-        # If there are no assignees, then we need to assign the issue.
-        manager = assign_review(issue_number)
+    manager = assignees[0]['login'] if assignees else assign_review(issue_number, dry_run)
     request_review = re.sub(
         r'\s',
         ' ',
@@ -320,10 +313,10 @@ charm"). Please choose someone that will have time to complete the initial
 review within the next three working days.
 """,
     )
-    comment = f'{comment}\n\n{request_review}'
+    comment = f'{request_review}\n\n{comment}'
 
-    existing_comments = subprocess.run(  # noqa: S603
-        ['gh', 'issue', 'view', str(issue_number), '--json', 'comments'],  # noqa: S607
+    existing_comments = subprocess.run(
+        ['gh', 'issue', 'view', str(issue_number), '--json', 'comments'],
         capture_output=True,
         text=True,
         check=True,
@@ -331,54 +324,35 @@ review within the next three working days.
     existing_comments = json.loads(existing_comments.stdout.strip()).get('comments', [])
     if not existing_comments:
         # Create a new comment.
-        subprocess.run(  # noqa: S603
-            ['gh', 'issue', 'comment', str(issue_number), '--body', comment],  # noqa: S607
-            check=True,
-        )
+        if dry_run:
+            print(comment)
+        else:
+            subprocess.run(
+                ['gh', 'issue', 'comment', str(issue_number), '--body', comment],
+                check=True,
+            )
         return
 
-    # Update the status with any checks from the reviewer.
-    reviewer = None
-    for existing_comment in existing_comments:
-        if existing_comment['author']['login'] == manager:
-            try:
-                reviewer = existing_comment['body'].split('@', 1)[1].split(' ')[0]
-            except IndexError:
-                # TODO: This should probably logger.warn, although it's only going to appear in the
-                # CI output.
-                print("Unable to find reviewer in", existing_comment)
-            else:
-                continue
-        if existing_comment['author']['login'] != reviewer:
-            continue
-        for line in existing_comment['body'].splitlines():
-            # We ignore everything that isn't in the checklist format,
-            # so that the reviewer can leave free-form comments.
-            if not line.startswith('* [ ]') and not line.startswith('* [x]'):
-                continue
-            if line.startswith('* [ ]') and line.replace('* [ ]', '* [x]') in comment:
-                # We are unticking this item, unfortunately.
-                comment = comment.replace(line.replace('* [ ]', '* [x]'), line)
-            elif line.startswith('* [x]') and line.replace('* [x]', '* [ ]') in comment:
-                # We are ticking this item, yay!
-                comment = comment.replace(line.replace('* [x]', '* [ ]'), line)
-
     # Update the first comment with the new content.
-    subprocess.run(  # noqa: S603
-        [  # noqa: S607
-            'gh',
-            'issue',
-            'comment',
-            str(issue_number),
-            '--edit-last',  # comment of the current user
-            '--body',
-            comment,
-        ],
-        check=True,
-    )
+    if dry_run:
+        print(comment)
+    else:
+        subprocess.run(
+            [
+                'gh',
+                'issue',
+                'comment',
+                str(issue_number),
+                '--edit-last',  # comment of the current user
+                '--body',
+                comment,
+            ],
+            check=True,
+        )
 
 
 def apply_automated_checks(issue_data: _IssueData, comment: str):
+    """Adjust the comment to tick items based on automated checks."""
     results = evaluate(
         issue_data['name'],
         issue_data['project_repo'],
@@ -388,13 +362,7 @@ def apply_automated_checks(issue_data: _IssueData, comment: str):
         issue_data['security_link'],
     )
     for result in results:
-        if result.replace('* [ ]', '* [x]') in comment:
-            # TODO: Should we support unticking? The reviewer needs to be able to override
-            # the checklist. However, the publisher should not be able to override and one way
-            # to enforce that is to have the automatic check 'win' (we would also need to
-            # trigger if the comment changes and not loop).
-            comment = comment.replace(result, result.replace('* [ ]', '* [x]'))
-        elif result.replace('* [x]', '* [ ]') in comment:
+        if result.replace('* [x]', '* [ ]') in comment:
             comment = comment.replace(result.replace('* [x]', '* [ ]'), result)
     return comment
 
@@ -438,12 +406,7 @@ def main():
     )
     comment = apply_automated_checks(issue_data, comment)
 
-    if args.dry_run:
-        print(summary)
-        print()
-        print(comment)
-    else:
-        update_gh_issue(args.issue_number, summary, comment)
+    update_gh_issue(args.issue_number, summary, comment, dry_run=args.dry_run)
 
 
 if __name__ == '__main__':
