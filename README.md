@@ -1,3 +1,5 @@
+**Moved to [Canonical's org](https://github.com/canonical/charmhub-listing-review).**
+
 # Requests for public listing on charmhub.io
 
 Charms on [Charmhub](https://charmhub.io) are either privately listed, meaning
